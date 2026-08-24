@@ -1,0 +1,950 @@
+{
+  "manifest_schema_version": 3,
+  "sdk_version": "5.11.0",
+  "app_id": "qlik-connector",
+  "version": "0.1.0",
+  "name": "Qlik",
+  "description": "Connect your own Qlik Cloud tenant (API key) to manage Spaces, apps and reload tasks from Imperal -- trigger data reloads, monitor task history, manage data connections and users. Nothing is hosted or proxied by Imperal beyond the request itself.",
+  "icon": "icon.svg",
+  "actions_explicit": true,
+  "system": false,
+  "capabilities": [
+    "qlik:read",
+    "qlik:write"
+  ],
+  "tools": [
+    {
+      "name": "connect_qlik",
+      "description": "Connect a Qlik Cloud tenant via API key, after validating the credentials actually work (lists spaces).",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "qlik.provider.connected"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "tenant_hostname": {
+            "description": "Qlik Cloud tenant hostname, e.g. mytenant.us.qlikcloud.com",
+            "title": "Tenant Hostname",
+            "type": "string"
+          },
+          "api_key": {
+            "description": "API key created in Management Console > Settings > API keys.",
+            "title": "Api Key",
+            "type": "string"
+          },
+          "label": {
+            "default": "",
+            "description": "Optional friendly label, e.g. 'Production tenant'.",
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tenant_hostname",
+          "api_key"
+        ],
+        "title": "ConnectQlikParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "tenant_hostname": {
+            "title": "Tenant Hostname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "tenant_hostname"
+        ],
+        "title": "ConnectionInfo",
+        "type": "object"
+      },
+      "event": "qlik-connector.connect_qlik",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "disconnect_qlik",
+      "description": "Disconnect a Qlik Cloud tenant: deletes only the saved credentials. Nothing in Qlik itself is changed.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "qlik.provider.disconnected"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "description": "Connection id from list_connections.",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connection_id"
+        ],
+        "title": "DisconnectQlikParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "ConnectionInfo": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "label": {
+                "title": "Label",
+                "type": "string"
+              },
+              "tenant_hostname": {
+                "title": "Tenant Hostname",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "tenant_hostname"
+            ],
+            "title": "ConnectionInfo",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/ConnectionInfo"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "ListConnectionsResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.disconnect_qlik",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "list_connections",
+      "description": "List the connected Qlik Cloud tenants.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "description": "Explicit empty params model -- V17 disallows untyped handlers.",
+        "properties": {},
+        "title": "NoParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "ConnectionInfo": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "label": {
+                "title": "Label",
+                "type": "string"
+              },
+              "tenant_hostname": {
+                "title": "Tenant Hostname",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "tenant_hostname"
+            ],
+            "title": "ConnectionInfo",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/ConnectionInfo"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "ListConnectionsResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.list_connections",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "list_spaces",
+      "description": "List Spaces (shared workspaces) on the connected Qlik Cloud tenant.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "title": "ConnectionScopedParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "SpaceItem": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "type": {
+                "default": "",
+                "title": "Type",
+                "type": "string"
+              },
+              "description": {
+                "default": "",
+                "title": "Description",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "SpaceItem",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/SpaceItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "ListSpacesResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.list_spaces",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "list_apps",
+      "description": "List Qlik apps in the connected tenant, optionally filtered to one Space.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "space_id": {
+            "default": "",
+            "description": "Filter to one Space; omit for all apps visible to the API key.",
+            "title": "Space Id",
+            "type": "string"
+          }
+        },
+        "title": "ListAppsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "AppItem": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "space_id": {
+                "default": "",
+                "title": "Space Id",
+                "type": "string"
+              },
+              "owner_id": {
+                "default": "",
+                "title": "Owner Id",
+                "type": "string"
+              },
+              "last_reload_time": {
+                "default": "",
+                "title": "Last Reload Time",
+                "type": "string"
+              },
+              "created_at": {
+                "default": "",
+                "title": "Created At",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "AppItem",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/AppItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "ListAppsResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.list_apps",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "get_app",
+      "description": "Read one Qlik app in full by id.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "app_id": {
+            "description": "Qlik app id, from list_apps.",
+            "title": "App Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "app_id"
+        ],
+        "title": "AppScopedParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "space_id": {
+            "default": "",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "owner_id": {
+            "default": "",
+            "title": "Owner Id",
+            "type": "string"
+          },
+          "created_at": {
+            "default": "",
+            "title": "Created At",
+            "type": "string"
+          },
+          "last_reload_time": {
+            "default": "",
+            "title": "Last Reload Time",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "AppDetail",
+        "type": "object"
+      },
+      "event": "qlik-connector.get_app",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "list_reload_tasks",
+      "description": "List reload tasks (data refresh schedules) in the connected tenant, optionally filtered to one app.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "app_id": {
+            "default": "",
+            "description": "Filter to one app; omit for all reload tasks visible to the API key.",
+            "title": "App Id",
+            "type": "string"
+          }
+        },
+        "title": "ListReloadTasksParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "ReloadTaskItem": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "name": {
+                "default": "",
+                "title": "Name",
+                "type": "string"
+              },
+              "app_id": {
+                "default": "",
+                "title": "App Id",
+                "type": "string"
+              },
+              "enabled": {
+                "default": true,
+                "title": "Enabled",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "title": "ReloadTaskItem",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/ReloadTaskItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "ListReloadTasksResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.list_reload_tasks",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "run_reload_task",
+      "description": "Manually run a reload task now, triggering a real data refresh in Qlik Cloud.",
+      "action_type": "write",
+      "chain_callable": true,
+      "effects": [
+        "qlik.reload.triggered"
+      ],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "task_id": {
+            "description": "Reload task id, from list_reload_tasks.",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id"
+        ],
+        "title": "RunReloadTaskParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "reload_id": {
+            "default": "",
+            "title": "Reload Id",
+            "type": "string"
+          },
+          "status": {
+            "default": "",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "ReloadResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.run_reload_task",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "get_reload",
+      "description": "Read one reload's status in full, including its log if it failed.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "reload_id": {
+            "description": "Reload id, from run_reload_task or list_reload_task_executions.",
+            "title": "Reload Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reload_id"
+        ],
+        "title": "GetReloadParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "default": "",
+            "title": "Status",
+            "type": "string"
+          },
+          "started_at": {
+            "default": "",
+            "title": "Started At",
+            "type": "string"
+          },
+          "ended_at": {
+            "default": "",
+            "title": "Ended At",
+            "type": "string"
+          },
+          "log": {
+            "default": "",
+            "title": "Log",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "ReloadDetail",
+        "type": "object"
+      },
+      "event": "qlik-connector.get_reload",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "list_reload_task_executions",
+      "description": "List past executions of one reload task, most recent first.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "task_id": {
+            "description": "Reload task id, from list_reload_tasks.",
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id"
+        ],
+        "title": "ListReloadExecutionsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "ReloadExecutionItem": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "status": {
+                "default": "",
+                "title": "Status",
+                "type": "string"
+              },
+              "started_at": {
+                "default": "",
+                "title": "Started At",
+                "type": "string"
+              },
+              "duration": {
+                "default": "",
+                "title": "Duration",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "title": "ReloadExecutionItem",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/ReloadExecutionItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "ListReloadExecutionsResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.list_reload_task_executions",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "list_data_connections",
+      "description": "List data connections (data sources apps can read from) in the connected tenant, optionally filtered to one Space.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "space_id": {
+            "default": "",
+            "description": "Filter to one Space; omit for all data connections visible to the API key.",
+            "title": "Space Id",
+            "type": "string"
+          }
+        },
+        "title": "ListDataConnectionsParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "DataConnectionItem": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "type": {
+                "default": "",
+                "title": "Type",
+                "type": "string"
+              },
+              "space_id": {
+                "default": "",
+                "title": "Space Id",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "DataConnectionItem",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/DataConnectionItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "ListDataConnectionsResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.list_data_connections",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "list_users",
+      "description": "List users registered in the connected Qlik Cloud tenant.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "title": "ConnectionScopedParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "$defs": {
+          "QlikUserItem": {
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "name": {
+                "default": "",
+                "title": "Name",
+                "type": "string"
+              },
+              "email": {
+                "default": "",
+                "title": "Email",
+                "type": "string"
+              },
+              "status": {
+                "default": "",
+                "title": "Status",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "title": "QlikUserItem",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/$defs/QlikUserItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "ListUsersResult",
+        "type": "object"
+      },
+      "event": "qlik-connector.list_users",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    },
+    {
+      "name": "audit_instance_health",
+      "description": "Build one aggregated health report across the connected Qlik Cloud tenant: Space/app counts and recently failed reloads.",
+      "action_type": "read",
+      "chain_callable": true,
+      "effects": [],
+      "id_projection": "",
+      "params_schema": {
+        "properties": {
+          "connection_id": {
+            "default": "",
+            "description": "Connection id; omit to use the first connected tenant.",
+            "title": "Connection Id",
+            "type": "string"
+          }
+        },
+        "title": "AuditHealthParams",
+        "type": "object"
+      },
+      "return_schema": {
+        "properties": {
+          "space_count": {
+            "default": 0,
+            "title": "Space Count",
+            "type": "integer"
+          },
+          "app_count": {
+            "default": 0,
+            "title": "App Count",
+            "type": "integer"
+          },
+          "reload_task_count": {
+            "default": 0,
+            "title": "Reload Task Count",
+            "type": "integer"
+          },
+          "failed_reloads_recent": {
+            "default": 0,
+            "title": "Failed Reloads Recent",
+            "type": "integer"
+          }
+        },
+        "title": "HealthAudit",
+        "type": "object"
+      },
+      "event": "qlik-connector.audit_instance_health",
+      "background": false,
+      "long_running": false,
+      "scopes": [],
+      "owner_chat_tool": "tool_qlik-connector_chat"
+    }
+  ],
+  "signals": [],
+  "schedules": [],
+  "required_scopes": [],
+  "icon_size_bytes": 316,
+  "lifecycle": {
+    "health_check": {
+      "interval_sec": 60
+    }
+  },
+  "panels": [
+    {
+      "panel_id": "qlik_sidebar",
+      "slot": "left",
+      "title": "Qlik",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": false
+    },
+    {
+      "panel_id": "qlik_connect_help",
+      "slot": "center",
+      "title": "Connecting Qlik Cloud",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": false,
+      "kind": "modal"
+    },
+    {
+      "panel_id": "qlik_space",
+      "slot": "center",
+      "title": "Space",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
+      "panel_id": "qlik_app",
+      "slot": "center",
+      "title": "App",
+      "tree": {},
+      "icon": "",
+      "refresh": "manual",
+      "center_overlay": true
+    },
+    {
+      "panel_id": "qlik_settings",
+      "slot": "center",
+      "title": "App settings",
+      "tree": {},
+      "icon": "⚙️",
+      "refresh": "manual",
+      "center_overlay": true
+    }
+  ]
+}
