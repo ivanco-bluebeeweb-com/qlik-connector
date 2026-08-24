@@ -39,7 +39,7 @@ def _connect_section() -> ui.UINode:
             submit_label="Verify and connect",
             children=[
                 _field("Tenant hostname", ui.Input(param_name="tenant_hostname", placeholder="e.g. mytenant.us.qlikcloud.com")),
-                _field("API key", ui.Input(param_name="api_key", input_type="password", placeholder="Management Console > Settings > API keys")),
+                _field("API key", ui.Input(param_name="api_key", placeholder="Management Console > Settings > API keys")),
                 _field("Label (optional)", ui.Input(param_name="label", placeholder="e.g. Production tenant")),
             ],
         ),
