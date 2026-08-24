@@ -1,0 +1,15 @@
+{
+  "connect_qlik": 0,
+  "disconnect_qlik": 0,
+  "list_connections": 0,
+  "list_spaces": 8,
+  "list_apps": 8,
+  "get_app": 8,
+  "list_reload_tasks": 8,
+  "get_reload": 8,
+  "list_reload_task_executions": 8,
+  "list_data_connections": 8,
+  "list_users": 8,
+  "run_reload_task": 20,
+  "audit_instance_health": 40
+}
