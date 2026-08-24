@@ -47,8 +47,8 @@ def _connect_section() -> ui.UINode:
 
 
 def _space_badge(space_type: str) -> ui.UINode:
-    variant = {"personal": "neutral", "shared": "info", "managed": "success"}.get(space_type, "neutral")
-    return ui.Badge(space_type or "personal", variant=variant)
+    color = {"personal": "gray", "shared": "blue", "managed": "green"}.get(space_type, "gray")
+    return ui.Badge(label=space_type or "personal", color=color)
 
 
 def _space_row(space: dict) -> ui.UINode:
@@ -63,7 +63,7 @@ def _space_row(space: dict) -> ui.UINode:
 async def qlik_sidebar(ctx, **kwargs) -> object:
     connections = await h._load_connections(ctx)
     if not connections:
-        return ui.Column(align="stretch", gap=3, children=[_connect_section(), ui.Divider(), _settings_button()])
+        return ui.Stack(direction="v", align="stretch", gap=3, children=[_connect_section(), ui.Divider(), _settings_button()])
 
     result = await h.list_spaces(ctx, h.ConnectionScopedParams())
     spaces = result.data.items if (result.success and result.data) else []
@@ -77,7 +77,7 @@ async def qlik_sidebar(ctx, **kwargs) -> object:
                 children.append(ui.Divider())
             children.append(_space_row(s.model_dump()))
 
-    return ui.Column(align="stretch", gap=3, children=[
+    return ui.Stack(direction="v", align="stretch", gap=3, children=[
         ui.Stack(direction="v", gap=2, align="stretch", children=children),
         ui.Divider(),
         _settings_button(),
@@ -99,8 +99,11 @@ async def qlik_space_panel(ctx, space_id: str = "", **kwargs) -> object:
     result = await h.list_apps(ctx, h.ListAppsParams(space_id=space_id))
     apps = result.data.items if (result.success and result.data) else []
     rows = [a.model_dump() for a in apps]
-    return ui.Stack(direction="v", gap=3, children=[
-        ui.DataTable(
+    children: list[ui.UINode] = []
+    if not rows:
+        children.append(ui.Text("No apps in this Space yet.", variant="caption"))
+    else:
+        children.append(ui.DataTable(
             columns=[
                 {"key": "name", "label": "Name"},
                 {"key": "owner_id", "label": "Owner"},
@@ -108,10 +111,9 @@ async def qlik_space_panel(ctx, space_id: str = "", **kwargs) -> object:
                 {"key": "created_at", "label": "Created"},
             ],
             rows=rows,
-            row_action=ui.Call("__panel__qlik_app", {"app_id": "{row.id}"}),
-            empty_message="No apps in this Space yet.",
-        ),
-    ])
+            on_row_click=ui.Call("__panel__qlik_app", {"app_id": "{row.id}"}),
+        ))
+    return ui.Stack(direction="v", gap=3, children=children)
 
 
 @ext.panel("qlik_app", slot="center", title="App", center_overlay=True)
@@ -122,7 +124,7 @@ async def qlik_app_panel(ctx, app_id: str = "", **kwargs) -> object:
         return ui.Text("App not found.", variant="body")
     a = detail.data
     execs = [e.model_dump() for e in (reloads_res.data.items if (reloads_res.success and reloads_res.data) else [])]
-    return ui.Stack(direction="v", gap=3, children=[
+    body: list[ui.UINode] = [
         ui.Button("← Back", variant="ghost", size="sm", on_click=ui.Call("__panel__qlik_space", {"space_id": a.space_id})),
         ui.KeyValue(items=[
             {"key": "Owner", "value": a.owner_id},
@@ -130,13 +132,16 @@ async def qlik_app_panel(ctx, app_id: str = "", **kwargs) -> object:
             {"key": "Created", "value": a.created_at},
             {"key": "Last reload", "value": a.last_reload_time},
         ]),
-        ui.DataTable(
+    ]
+    if not execs:
+        body.append(ui.Text("No reload history yet.", variant="caption"))
+    else:
+        body.append(ui.DataTable(
             columns=[
                 {"key": "started_at", "label": "Started"},
                 {"key": "status", "label": "Status"},
                 {"key": "duration_seconds", "label": "Duration (s)"},
             ],
             rows=execs,
-            empty_message="No reload history yet.",
-        ),
-    ])
+        ))
+    return ui.Stack(direction="v", gap=3, children=body)
