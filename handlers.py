@@ -93,7 +93,7 @@ async def list_connections(ctx, params: NoParams) -> ActionResult:
     """Imperal action: list_connections."""
     connections = await _load_connections(ctx)
     items = [ConnectionInfo(id=c["id"], label=c.get("label", ""), tenant_hostname=c["tenant_hostname"]) for c in connections]
-    return ActionResult.success(data=ListConnectionsResult(items=items))
+    return ActionResult.success(data=ListConnectionsResult(items=items), summary="Connections listed.")
 
 
 @chat.function("list_spaces", "List Spaces (shared workspaces) on the connected Qlik Cloud tenant.", action_type="read", chain_callable=True, data_model=ListSpacesResult, event="qlik-connector.list_spaces")
@@ -105,7 +105,7 @@ async def list_spaces(ctx, params: ConnectionScopedParams) -> ActionResult:
     except (qc.ClientFail, ValueError) as e:
         return ActionResult.error(str(getattr(e, "message", e)), code="QLIK_LIST_SPACES_FAILED")
     items = [SpaceItem(id=s["id"], name=s.get("name", ""), type=s.get("type", ""), description=s.get("description", "") or "") for s in raw]
-    return ActionResult.success(data=ListSpacesResult(items=items))
+    return ActionResult.success(data=ListSpacesResult(items=items), summary="Spaces listed.")
 
 
 @chat.function("list_apps", "List Qlik apps in the connected tenant, optionally filtered to one Space.", action_type="read", chain_callable=True, data_model=ListAppsResult, event="qlik-connector.list_apps")
@@ -124,7 +124,7 @@ async def list_apps(ctx, params: ListAppsParams) -> ActionResult:
             space_id=a.get("spaceId", "") or r.get("spaceId", ""), owner_id=a.get("ownerId", "") or r.get("owner", ""),
             last_reload_time=r.get("lastReloadTime", ""), created_at=a.get("createdAt", r.get("createdDate", "")),
         ))
-    return ActionResult.success(data=ListAppsResult(items=items))
+    return ActionResult.success(data=ListAppsResult(items=items), summary="Apps listed.")
 
 
 @chat.function("get_app", "Read one Qlik app in full by id.", action_type="read", chain_callable=True, data_model=AppDetail, event="qlik-connector.get_app")
@@ -139,7 +139,7 @@ async def get_app(ctx, params: AppScopedParams) -> ActionResult:
         id=a.get("id", params.app_id), name=a.get("name", ""), space_id=a.get("spaceId", "") or "",
         owner_id=a.get("owner", "") or "", created_at=a.get("createdDate", ""),
         last_reload_time=a.get("lastReloadTime", ""), description=a.get("description", "") or "",
-    ))
+    ), summary="App retrieved.")
 
 
 @chat.function("list_reload_tasks", "List reload tasks (data refresh schedules) in the connected tenant, optionally filtered to one app.", action_type="read", chain_callable=True, data_model=ListReloadTasksResult, event="qlik-connector.list_reload_tasks")
@@ -151,7 +151,7 @@ async def list_reload_tasks(ctx, params: ListReloadTasksParams) -> ActionResult:
     except (qc.ClientFail, ValueError) as e:
         return ActionResult.error(str(getattr(e, "message", e)), code="QLIK_LIST_RELOAD_TASKS_FAILED")
     items = [ReloadTaskItem(id=t["id"], name=t.get("name", ""), app_id=t.get("appId", ""), enabled=t.get("enabled", True)) for t in raw]
-    return ActionResult.success(data=ListReloadTasksResult(items=items))
+    return ActionResult.success(data=ListReloadTasksResult(items=items), summary="Reload tasks listed.")
 
 
 @chat.function("run_reload_task", "Manually run a reload task now, triggering a real data refresh in Qlik Cloud.", action_type="write", chain_callable=True, data_model=ReloadResult, event="qlik-connector.run_reload_task", effects=["qlik.reload.triggered"])
@@ -180,7 +180,7 @@ async def get_reload(ctx, params: GetReloadParams) -> ActionResult:
     return ActionResult.success(data=ReloadDetail(
         id=r.get("id", params.reload_id), status=r.get("status", ""),
         started_at=r.get("startTime", ""), ended_at=r.get("endTime", ""), log=r.get("log", "") or "",
-    ))
+    ), summary="Reload retrieved.")
 
 
 @chat.function("list_reload_task_executions", "List past executions of one reload task, most recent first.", action_type="read", chain_callable=True, data_model=ListReloadExecutionsResult, event="qlik-connector.list_reload_task_executions")
@@ -192,7 +192,7 @@ async def list_reload_task_executions(ctx, params: ListReloadExecutionsParams) -
     except (qc.ClientFail, ValueError) as e:
         return ActionResult.error(str(getattr(e, "message", e)), code="QLIK_LIST_RELOAD_EXECUTIONS_FAILED")
     items = [ReloadExecutionItem(id=e_.get("id", ""), status=e_.get("status", ""), started_at=e_.get("startTime", ""), duration=str(e_.get("duration", ""))) for e_ in raw]
-    return ActionResult.success(data=ListReloadExecutionsResult(items=items))
+    return ActionResult.success(data=ListReloadExecutionsResult(items=items), summary="Reload task executions listed.")
 
 
 @chat.function("list_data_connections", "List data connections (data sources apps can read from) in the connected tenant, optionally filtered to one Space.", action_type="read", chain_callable=True, data_model=ListDataConnectionsResult, event="qlik-connector.list_data_connections")
@@ -204,7 +204,7 @@ async def list_data_connections(ctx, params: ListDataConnectionsParams) -> Actio
     except (qc.ClientFail, ValueError) as e:
         return ActionResult.error(str(getattr(e, "message", e)), code="QLIK_LIST_DATA_CONNECTIONS_FAILED")
     items = [DataConnectionItem(id=d["id"], name=d.get("qName", d.get("name", "")), type=d.get("qType", d.get("type", "")), space_id=d.get("space", "") or "") for d in raw]
-    return ActionResult.success(data=ListDataConnectionsResult(items=items))
+    return ActionResult.success(data=ListDataConnectionsResult(items=items), summary="Data connections listed.")
 
 
 @chat.function("list_users", "List users registered in the connected Qlik Cloud tenant.", action_type="read", chain_callable=True, data_model=ListUsersResult, event="qlik-connector.list_users")
@@ -216,7 +216,7 @@ async def list_users(ctx, params: ConnectionScopedParams) -> ActionResult:
     except (qc.ClientFail, ValueError) as e:
         return ActionResult.error(str(getattr(e, "message", e)), code="QLIK_LIST_USERS_FAILED")
     items = [QlikUserItem(id=u["id"], name=u.get("name", ""), email=u.get("email", ""), status=u.get("status", "")) for u in raw]
-    return ActionResult.success(data=ListUsersResult(items=items))
+    return ActionResult.success(data=ListUsersResult(items=items), summary="Users listed.")
 
 
 @chat.function("audit_instance_health", "Build one aggregated health report across the connected Qlik Cloud tenant: Space/app counts and recently failed reloads.", action_type="read", chain_callable=True, data_model=HealthAudit, event="qlik-connector.audit_instance_health")
@@ -232,4 +232,4 @@ async def audit_instance_health(ctx, params: AuditHealthParams) -> ActionResult:
     return ActionResult.success(data=HealthAudit(
         space_count=len(spaces), app_count=len(apps), reload_task_count=len(tasks),
         failed_reloads_recent=0,
-    ))
+    ), summary="Instance health audit ready.")
