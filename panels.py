@@ -21,8 +21,7 @@ import handlers as h
 
 def _settings_button() -> ui.UINode:
     return ui.Button(
-        "App settings", variant="secondary", size="sm", full_width=True,
-        icon="settings", on_click=ui.Call("__panel__qlik_settings"),
+        "App settings", variant="secondary", size="sm", icon="settings", on_click=ui.Call("__panel__qlik_settings"),
     )
 
 
@@ -34,6 +33,9 @@ def _connect_section() -> ui.UINode:
     return ui.Stack(direction="v", gap=3, align="stretch", children=[
         ui.Button("How do I set this up?", variant="ghost", size="sm", icon="HelpCircle",
                   on_click=ui.Call("__panel__qlik_connect_help")),
+        ui.Button("Sign in with Qlik Cloud (OAuth 2.0 / SSO)", variant="primary", size="sm", icon="login"),
+        ui.Divider(),
+        ui.Text("Or connect via API Key", variant="caption"),
         ui.Form(
             action="connect_qlik",
             submit_label="Verify and connect",
@@ -53,8 +55,7 @@ def _space_badge(space_type: str) -> ui.UINode:
 
 def _space_row(space: dict) -> ui.UINode:
     return ui.Stack(direction="h", gap=2, align="center", children=[
-        ui.Button(space.get("name", ""), variant="ghost", size="sm", full_width=True,
-                  on_click=ui.Call("__panel__qlik_space", {"space_id": space.get("id", "")})),
+        ui.Button(space.get("name", ""), variant="ghost", size="sm", on_click=ui.Call("__panel__qlik_space", {"space_id": space.get("id", "")})),
         _space_badge(space.get("type", "")),
     ])
 
